@@ -9,8 +9,7 @@ describe('layoutPedestals', () => {
     expect(layout.columns).toBe(1);
     expect(layout.rows).toBe(1);
     expect(layout.positions).toEqual([{ x: 0, z: 0 }]);
-    expect(layout.hallWidth).toBe(12);
-    expect(layout.hallDepth).toBe(12);
+    expect(layout.hall).toEqual({ width: 12, depth: 12 });
   });
 });
 
@@ -39,14 +38,12 @@ describe('layoutPedestals with several pedestals', () => {
 
   it('grows the Hall to fit the grid plus the margin', () => {
     const layout = layoutPedestals(9, options);
-    expect(layout.hallWidth).toBe(16);
-    expect(layout.hallDepth).toBe(16);
+    expect(layout.hall).toEqual({ width: 16, depth: 16 });
   });
 
   it('keeps the Hall at its minimum size with no Exhibits', () => {
     const layout = layoutPedestals(0, options);
     expect(layout.positions).toEqual([]);
-    expect(layout.hallWidth).toBe(12);
-    expect(layout.hallDepth).toBe(12);
+    expect(layout.hall).toEqual({ width: 12, depth: 12 });
   });
 });

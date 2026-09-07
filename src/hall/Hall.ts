@@ -5,6 +5,7 @@ import { buildLighting, buildWalls, walkableBounds } from './buildWalls';
 import { buildPedestal, type Pedestal } from './buildPedestal';
 import { createFirstPersonControls, type FirstPersonControls } from './firstPersonControls';
 import { layoutPedestals } from './layoutPedestals';
+import { createPedestalFocus } from './pedestalFocus';
 
 export interface Hall {
   readonly controls: FirstPersonControls;
@@ -25,7 +26,6 @@ const MAX_FRAME_SECONDS = 0.1;
 /** How close the Visitor must be for a pedestal to highlight. */
 const REACH = 3;
 const LAYOUT = { spacing: 4, margin: 4, minWidth: 12, minDepth: 12 };
-const SCREEN_CENTRE = new THREE.Vector2(0, 0);
 
 /**
  * The walkable Hall: one pedestal per Exhibit in the registry, on a grid the
@@ -33,7 +33,7 @@ const SCREEN_CENTRE = new THREE.Vector2(0, 0);
  */
 export function createHall(container: HTMLElement, registry: ExhibitRegistry): Hall {
   const layout = layoutPedestals(registry.exhibits.length, LAYOUT);
-  const size = { width: layout.hallWidth, depth: layout.hallDepth, height: HALL_HEIGHT };
+  const size = { ...layout.hall, height: HALL_HEIGHT };
 
   const renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -53,8 +53,6 @@ export function createHall(container: HTMLElement, registry: ExhibitRegistry): H
     scene.add(pedestal.object);
     return pedestal;
   });
-  const pedestalByHitTarget = new Map(pedestals.map((p) => [p.hitTarget, p]));
-  const hitTargets = pedestals.map((p) => p.hitTarget);
 
   const camera = new THREE.PerspectiveCamera(
     70,
@@ -71,32 +69,7 @@ export function createHall(container: HTMLElement, registry: ExhibitRegistry): H
     WALK_SPEED,
   );
 
-  const prompt = document.createElement('div');
-  prompt.className = 'hall-prompt';
-  prompt.hidden = true;
-  prompt.innerHTML = 'Click or press <kbd>E</kbd> to open ';
-  const promptTitle = document.createElement('strong');
-  prompt.appendChild(promptTitle);
-  container.appendChild(prompt);
-
-  const raycaster = new THREE.Raycaster();
-  raycaster.far = REACH;
-  let focused: Pedestal | null = null;
-
-  const setFocused = (next: Pedestal | null) => {
-    if (next === focused) return;
-    focused?.setHighlighted(false);
-    next?.setHighlighted(true);
-    focused = next;
-    promptTitle.textContent = next?.exhibit.manifest.title ?? '';
-    prompt.hidden = next === null;
-  };
-
-  const updateFocus = () => {
-    raycaster.setFromCamera(SCREEN_CENTRE, camera);
-    const hit = raycaster.intersectObjects(hitTargets, false)[0];
-    setFocused(hit ? (pedestalByHitTarget.get(hit.object as THREE.Mesh) ?? null) : null);
-  };
+  const focus = createPedestalFocus(container, camera, pedestals, REACH);
 
   const onResize = () => {
     const { clientWidth, clientHeight } = container;
@@ -114,14 +87,14 @@ export function createHall(container: HTMLElement, registry: ExhibitRegistry): H
     timer.update();
     const dt = Math.min(timer.getDelta(), MAX_FRAME_SECONDS);
     controls.update(dt);
-    updateFocus();
+    focus.update();
     renderer.render(scene, camera);
   };
 
   return {
     controls,
     get focusedExhibit() {
-      return focused?.exhibit ?? null;
+      return focus.focused?.exhibit ?? null;
     },
     start: () => {
       if (frame !== null) return;
@@ -140,7 +113,7 @@ export function createHall(container: HTMLElement, registry: ExhibitRegistry): H
       controls.dispose();
       renderer.dispose();
       renderer.domElement.remove();
-      prompt.remove();
+      focus.dispose();
     },
   };
 }

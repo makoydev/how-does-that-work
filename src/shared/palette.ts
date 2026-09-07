@@ -3,8 +3,7 @@
  * fresh air is blue, hot or burning things are orange, waste is grey, the
  * part that is moving right now is yellow, and everything else is neutral.
  *
- * Values are Three.js-style hex numbers. Use `toCssColor` for 2D canvases
- * and DOM styles.
+ * Values are Three.js-style hex numbers.
  */
 export const palette = {
   freshAir: 0x4da3ff,
@@ -13,9 +12,3 @@ export const palette = {
   activePart: 0xffd21f,
   neutral: 0xb9b5ad,
 } as const;
-
-export type PaletteColor = (typeof palette)[keyof typeof palette];
-
-export function toCssColor(color: number): string {
-  return `#${color.toString(16).padStart(6, '0')}`;
-}

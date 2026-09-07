@@ -2,8 +2,8 @@ import type { Exhibit } from '../../shared/exhibitContract';
 
 /**
  * The V8 engine. For now a stub that proves the discovery path: a full
- * manifest and Step list, and a mount that shows the summary. The model,
- * the animated Steps, Free Play, and the mini model arrive in later tickets.
+ * manifest and a mount that shows the summary. The model, the Steps, Free
+ * Play, and the mini model arrive in later tickets.
  */
 const v8Engine: Exhibit = {
   manifest: {
@@ -17,16 +17,8 @@ const v8Engine: Exhibit = {
     ],
   },
   walkthrough: {
-    steps: [
-      { id: 'parts', caption: 'Meet the parts.' },
-      { id: 'intake', caption: 'Intake: the piston drops and pulls in fuel and air.' },
-      { id: 'compression', caption: 'Compression: the piston rises and squeezes the mixture.' },
-      { id: 'power', caption: 'Power: a spark burns the mixture and shoves the piston down.' },
-      { id: 'exhaust', caption: 'Exhaust: the piston rises and pushes the burnt gas out.' },
-      { id: 'crankshaft', caption: 'The crankshaft turns up-and-down into round-and-round.' },
-      { id: 'all-eight', caption: 'All eight cylinders take turns, so the crank spins smoothly.' },
-    ],
-    hasFreePlay: true,
+    steps: [{ id: 'placeholder', caption: 'The V8 engine Walkthrough is coming soon.' }],
+    hasFreePlay: false,
   },
   mount(container) {
     const note = document.createElement('p');

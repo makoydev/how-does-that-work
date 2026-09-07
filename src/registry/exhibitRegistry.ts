@@ -39,4 +39,8 @@ function validateManifest(exhibit: Exhibit): void {
   if (!sources || sources.length === 0) {
     throw new Error(`Exhibit "${slug}" needs at least one source`);
   }
+  for (const source of sources) {
+    if (!source.label) throw new Error(`Exhibit "${slug}" has a source without a label`);
+    if (!source.url) throw new Error(`Exhibit "${slug}" source "${source.label}" has no URL`);
+  }
 }

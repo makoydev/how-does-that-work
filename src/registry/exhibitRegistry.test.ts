@@ -99,3 +99,17 @@ describe('createExhibitRegistry resolving a slug', () => {
     expect(registry.resolve('')).toBeUndefined();
   });
 });
+
+describe('createExhibitRegistry checking each source', () => {
+  it('names the slug when a source has no label', () => {
+    expect(() =>
+      createExhibitRegistry([exhibit({ sources: [{ label: '', url: 'https://example.com' }] })]),
+    ).toThrow('Exhibit "v8-engine" has a source without a label');
+  });
+
+  it('names the slug and the source when a source has no URL', () => {
+    expect(() =>
+      createExhibitRegistry([exhibit({ sources: [{ label: 'Wikipedia', url: '' }] })]),
+    ).toThrow('Exhibit "v8-engine" source "Wikipedia" has no URL');
+  });
+});

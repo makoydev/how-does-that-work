@@ -14,8 +14,8 @@ export interface PedestalLayout {
   rows: number;
   /** One floor position per pedestal, in the order the pedestals were given. */
   positions: FloorPosition[];
-  hallWidth: number;
-  hallDepth: number;
+  /** The floor the Hall needs to fit the grid plus the margin. */
+  hall: { width: number; depth: number };
 }
 
 /**
@@ -37,7 +37,9 @@ export function layoutPedestals(count: number, options: LayoutOptions): Pedestal
     columns,
     rows,
     positions,
-    hallWidth: Math.max(minWidth, (columns - 1) * spacing + 2 * margin),
-    hallDepth: Math.max(minDepth, (rows - 1) * spacing + 2 * margin),
+    hall: {
+      width: Math.max(minWidth, (columns - 1) * spacing + 2 * margin),
+      depth: Math.max(minDepth, (rows - 1) * spacing + 2 * margin),
+    },
   };
 }

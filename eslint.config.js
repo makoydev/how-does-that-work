@@ -8,7 +8,7 @@ export default tseslint.config(
   ...tseslint.configs.recommended,
   {
     // Exhibits are isolated modules (ADR 0001): this rule is the enforcement.
-    files: ['src/exhibits/**/*.ts'],
+    files: ['src/exhibits/**'],
     plugins: { 'exhibit-isolation': exhibitIsolation },
     rules: { 'exhibit-isolation/only-allowed-imports': 'error' },
   },

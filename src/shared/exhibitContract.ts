@@ -12,12 +12,12 @@ export interface ExhibitManifest {
   title: string;
   /** Subject area, such as "Engines". The Hall orders pedestals by it. */
   category: string;
-  /** One line, shown on the pedestal placard and in the overlay. */
+  /** One line describing the subject, for the overlay that hosts the open Exhibit. */
   summary: string;
   sources: readonly ExhibitSource[];
 }
 
-/** One stage of a Walkthrough: a single change to the model plus a caption. */
+/** One Step of a Walkthrough: a single change to the model plus a caption. */
 export interface Step {
   id: string;
   /** At most two short plain sentences. Define any technical word inline. */
