@@ -127,7 +127,7 @@ An Exhibit folder exports one object with:
 - A **mount** function that receives a plain DOM container and a handle for reacting to the controller: it is told when the Step changes and when Free Play is entered or left, and returns an unmount function. The Exhibit creates its own canvas inside the container if it needs one and owns its own render loop.
 - An optional **mini model** function returning a small Three.js object for the pedestal. When absent, the pedestal shows a placard only.
 
-Exhibits never import from the Hall, the App, or other Exhibits. This is enforced by a lint rule restricting imports from the exhibits directory to Three.js, the shared palette, and the Exhibit contract types. See ADR 0001.
+Exhibits never import from the Hall, the App, or other Exhibits. This is enforced by a lint rule restricting imports from the exhibits directory to Three.js, the shared palette, and the Exhibit contract types (an Exhibit's own test files may also import the test runner). See ADR 0001.
 
 ### Hall behaviour
 

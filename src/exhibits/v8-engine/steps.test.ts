@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import { poseAt } from './enginePose';
 import { STEPS } from './steps';
 
 const sentenceCount = (text: string) => text.split(/[.!?](?:\s|$)/).filter((s) => s.trim()).length;
@@ -16,10 +15,6 @@ describe('the V8 Steps', () => {
   it.each(STEPS.map((step) => [step.id, step]))('%s plays for a short fixed time', (_, step) => {
     expect(step.duration).toBeGreaterThan(0);
     expect(step.duration).toBeLessThanOrEqual(10);
-  });
-
-  it.each(STEPS.map((step) => [step.id, step]))('%s has a pose the engine knows how to strike', (_, step) => {
-    expect(() => poseAt(step.id, 0)).not.toThrow();
   });
 
   it('gives every Step its own camera pose', () => {

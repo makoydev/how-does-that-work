@@ -51,11 +51,15 @@ export const CYLINDER_ONE: CylinderSpec = CYLINDERS[0] as CylinderSpec;
 const TOP_DEAD_CENTRE = ROD_LENGTH + CRANK_RADIUS;
 const BOTTOM_DEAD_CENTRE = ROD_LENGTH - CRANK_RADIUS;
 
+/** Where a cylinder's crankpin is, seen from that cylinder: along its axis and across it. */
+export function crankPin(crankAngle: number, cylinder: CylinderSpec): { along: number; across: number } {
+  const pinAngle = crankAngle + cylinder.throwOffset - cylinder.bankAngle;
+  return { along: CRANK_RADIUS * Math.cos(pinAngle), across: CRANK_RADIUS * Math.sin(pinAngle) };
+}
+
 /** Distance of the piston's centre from the crank axis, measured along the cylinder axis. */
 export function pistonOffset(crankAngle: number, cylinder: CylinderSpec): number {
-  const pinAngle = crankAngle + cylinder.throwOffset - cylinder.bankAngle;
-  const along = CRANK_RADIUS * Math.cos(pinAngle);
-  const across = CRANK_RADIUS * Math.sin(pinAngle);
+  const { along, across } = crankPin(crankAngle, cylinder);
   return along + Math.sqrt(ROD_LENGTH * ROD_LENGTH - across * across);
 }
 
@@ -63,6 +67,9 @@ export function pistonOffset(crankAngle: number, cylinder: CylinderSpec): number
 export function pistonTravel(crankAngle: number, cylinder: CylinderSpec): number {
   return (TOP_DEAD_CENTRE - pistonOffset(crankAngle, cylinder)) / (TOP_DEAD_CENTRE - BOTTOM_DEAD_CENTRE);
 }
+
+/** The Steps whose poses the engine knows how to strike. */
+export type V8StepId = 'parts' | 'intake' | 'compression' | 'power' | 'exhaust';
 
 export type Part =
   | 'block'
@@ -72,7 +79,6 @@ export type Part =
   | 'crankshaft'
   | 'valves'
   | 'piston-one'
-  | 'rod-one'
   | 'intake-valve-one'
   | 'exhaust-valve-one';
 
@@ -92,7 +98,8 @@ export interface CylinderOneState {
   spark: number;
 }
 
-export interface NameTag {
+/** A part's name and a plain-words meaning, shown while the part lights up. */
+export interface PartLabel {
   name: string;
   meaning: string;
 }
@@ -103,7 +110,7 @@ export interface EnginePose {
   /** The parts drawn in the active-part yellow: whatever is moving or being named now. */
   lit: readonly Part[];
   /** Shown over the model while a Step is naming parts. */
-  nameTag: NameTag | null;
+  label: PartLabel | null;
 }
 
 const clamp01 = (value: number) => Math.min(1, Math.max(0, value));
@@ -135,14 +142,14 @@ const PARTS_IN_ORDER: readonly { part: Part; name: string; meaning: string }[] =
 ];
 
 /** The crank angle putting cylinder one at the top of its travel. */
-const CYLINDER_ONE_TOP = CYLINDER_ONE.bankAngle - CYLINDER_ONE.throwOffset;
+export const CYLINDER_ONE_TOP = CYLINDER_ONE.bankAngle - CYLINDER_ONE.throwOffset;
 
 /** Crank angle `progress` of the way through one of cylinder one's four strokes. */
 const strokeCrankAngle = (stroke: number, progress: number) =>
   CYLINDER_ONE_TOP + (stroke + progress) * Math.PI;
 
 /** The engine at `progress` (0 to 1) through the Step named `stepId`. */
-export function poseAt(stepId: string, progress: number): EnginePose {
+export function poseAt(stepId: V8StepId, progress: number): EnginePose {
   const t = clamp01(progress);
   switch (stepId) {
     case 'parts': {
@@ -152,7 +159,7 @@ export function poseAt(stepId: string, progress: number): EnginePose {
         crankAngle: CYLINDER_ONE_TOP,
         cylinderOne: RESTING_CYLINDER,
         lit: [named.part],
-        nameTag: { name: named.name, meaning: named.meaning },
+        label: { name: named.name, meaning: named.meaning },
       };
     }
     case 'intake':
@@ -165,7 +172,7 @@ export function poseAt(stepId: string, progress: number): EnginePose {
           fill: t,
         },
         lit: ['piston-one', 'intake-valve-one'],
-        nameTag: null,
+        label: null,
       };
     case 'compression':
       return {
@@ -178,7 +185,7 @@ export function poseAt(stepId: string, progress: number): EnginePose {
           pale: t,
         },
         lit: ['piston-one'],
-        nameTag: null,
+        label: null,
       };
     case 'power':
       return {
@@ -190,7 +197,7 @@ export function poseAt(stepId: string, progress: number): EnginePose {
           spark: 1 - ramp(t, 0, SPARK_FADE),
         },
         lit: ['piston-one'],
-        nameTag: null,
+        label: null,
       };
     case 'exhaust':
       return {
@@ -202,9 +209,9 @@ export function poseAt(stepId: string, progress: number): EnginePose {
           fill: 1 - t,
         },
         lit: ['piston-one', 'exhaust-valve-one'],
-        nameTag: null,
+        label: null,
       };
     default:
-      throw new Error(`The V8 has no Step "${stepId}"`);
+      throw new Error(`The V8 has no Step "${stepId satisfies never}"`);
   }
 }

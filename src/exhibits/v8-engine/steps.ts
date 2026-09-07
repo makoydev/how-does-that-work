@@ -1,4 +1,5 @@
 import type { Step } from '../../shared/exhibitContract';
+import type { V8StepId } from './enginePose';
 
 export interface CameraPose {
   position: readonly [number, number, number];
@@ -7,10 +8,11 @@ export interface CameraPose {
 }
 
 export interface V8Step extends Step {
+  id: V8StepId;
   /** Seconds the Step's one change takes to play. */
   duration: number;
-  /** 'smooth' eases in and out; 'shove' starts fast and settles, for the power stroke. */
-  easing: 'smooth' | 'shove';
+  /** 'even' is steady; 'smooth' eases in and out; 'shove' starts fast and settles. */
+  easing: 'even' | 'smooth' | 'shove';
   camera: CameraPose;
 }
 
@@ -31,13 +33,13 @@ export const STEPS: readonly V8Step[] = [
       'A V8 has eight cylinders, the tubes where fuel burns, set in two rows that meet in a V. ' +
       'Each part lights up as it is named, from the block that holds everything to the valves that let gas in and out.',
     duration: 7.2,
-    easing: 'smooth',
+    easing: 'even',
     camera: { position: [3.1, 2.2, 3.7], target: [0, 0.5, 0] },
   },
   {
     id: 'intake',
     caption:
-      'The intake valve, the door that lets fuel and air in, opens as the piston slides down. ' +
+      'The intake valve, the door that lets fuel and air in, opens as the piston, the plug inside the cylinder, slides down. ' +
       'The drop pulls a blue mixture of fuel and air into the cylinder.',
     duration: STROKE_SECONDS,
     easing: 'smooth',

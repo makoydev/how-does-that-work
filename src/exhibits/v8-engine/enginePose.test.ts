@@ -1,20 +1,17 @@
 import { describe, expect, it } from 'vitest';
-import { CYLINDER_ONE, pistonTravel, poseAt } from './enginePose';
+import { CYLINDER_ONE, CYLINDER_ONE_TOP, pistonTravel, poseAt, type V8StepId } from './enginePose';
 
 describe('pistonTravel', () => {
   it('is 0 at top dead centre, where the crankpin points up the cylinder', () => {
-    const topDeadCentre = CYLINDER_ONE.bankAngle - CYLINDER_ONE.throwOffset;
-    expect(pistonTravel(topDeadCentre, CYLINDER_ONE)).toBeCloseTo(0);
+    expect(pistonTravel(CYLINDER_ONE_TOP, CYLINDER_ONE)).toBeCloseTo(0);
   });
 
   it('is 1 at bottom dead centre, half a turn later', () => {
-    const topDeadCentre = CYLINDER_ONE.bankAngle - CYLINDER_ONE.throwOffset;
-    expect(pistonTravel(topDeadCentre + Math.PI, CYLINDER_ONE)).toBeCloseTo(1);
+    expect(pistonTravel(CYLINDER_ONE_TOP + Math.PI, CYLINDER_ONE)).toBeCloseTo(1);
   });
 
   it('is strictly between the two a quarter turn after the top', () => {
-    const topDeadCentre = CYLINDER_ONE.bankAngle - CYLINDER_ONE.throwOffset;
-    const travel = pistonTravel(topDeadCentre + Math.PI / 2, CYLINDER_ONE);
+    const travel = pistonTravel(CYLINDER_ONE_TOP + Math.PI / 2, CYLINDER_ONE);
     expect(travel).toBeGreaterThan(0.2);
     expect(travel).toBeLessThan(0.8);
   });
@@ -103,7 +100,7 @@ describe('poseAt during exhaust', () => {
 });
 
 describe('poseAt across the four strokes', () => {
-  it.each([
+  it.each<[V8StepId, V8StepId]>([
     ['intake', 'compression'],
     ['compression', 'power'],
     ['power', 'exhaust'],
@@ -125,14 +122,14 @@ describe('poseAt across the four strokes', () => {
 describe('poseAt while meeting the parts', () => {
   it('names the block first, lighting only the block', () => {
     const pose = poseAt('parts', 0);
-    expect(pose.nameTag?.name).toBe('Block');
+    expect(pose.label?.name).toBe('Block');
     expect(pose.lit).toEqual(['block']);
   });
 
   it('moves on to the next part as time passes, with a plain meaning for each', () => {
-    const named = [0, 0.2, 0.4, 0.6, 0.8, 1].map((t) => poseAt('parts', t).nameTag?.name);
+    const named = [0, 0.2, 0.4, 0.6, 0.8, 1].map((t) => poseAt('parts', t).label?.name);
     expect(named).toEqual(['Block', 'Cylinders', 'Pistons', 'Connecting rods', 'Crankshaft', 'Valves']);
-    for (const t of [0, 0.2, 0.4, 0.6, 0.8, 1]) expect(poseAt('parts', t).nameTag?.meaning).toBeTruthy();
+    for (const t of [0, 0.2, 0.4, 0.6, 0.8, 1]) expect(poseAt('parts', t).label?.meaning).toBeTruthy();
   });
 
   it('keeps the engine still, at rest, and empty', () => {
@@ -143,8 +140,8 @@ describe('poseAt while meeting the parts', () => {
     expect(end.cylinderOne.charge).toBe('none');
   });
 
-  it('shows no name tag once the strokes begin', () => {
-    expect(poseAt('intake', 0).nameTag).toBeNull();
+  it('shows no part label once the strokes begin', () => {
+    expect(poseAt('intake', 0).label).toBeNull();
   });
 });
 
@@ -158,6 +155,6 @@ describe('poseAt with awkward input', () => {
   });
 
   it('refuses a Step it does not know by name', () => {
-    expect(() => poseAt('warp-drive', 0)).toThrow('warp-drive');
+    expect(() => poseAt('warp-drive' as V8StepId, 0)).toThrow('warp-drive');
   });
 });

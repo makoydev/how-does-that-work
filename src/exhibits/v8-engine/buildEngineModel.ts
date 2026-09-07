@@ -6,6 +6,7 @@ import {
   CRANK_RADIUS,
   CYLINDERS,
   ROD_LENGTH,
+  crankPin,
   pistonOffset,
   type CylinderSpec,
   type EnginePose,
@@ -25,6 +26,8 @@ const PISTON_HEIGHT = 0.12;
 const TUBE_BOTTOM = 0.28;
 const HEAD = 0.92;
 const VALVE_RADIUS = 0.05;
+/** Where a shut valve's disc sits, just under the head. */
+const VALVE_SEAT = HEAD - 0.01;
 const VALVE_LIFT = 0.07;
 /** Valves sit either side of the cylinder centre, along the crank axis. */
 const VALVE_SPACING = 0.065;
@@ -157,11 +160,11 @@ export function buildEngineModel(): EngineModel {
     tilted.add(register(piston, isOne ? ['pistons', 'piston-one'] : ['pistons']));
 
     const rod = new THREE.Mesh(rodGeometry, solid(NEUTRAL));
-    tilted.add(register(rod, isOne ? ['rods', 'rod-one'] : ['rods']));
+    tilted.add(register(rod, ['rods']));
 
     const buildValve = (side: number, parts: readonly Part[]) => {
       const valve = new THREE.Group();
-      valve.position.set(side * VALVE_SPACING, HEAD - 0.01, 0);
+      valve.position.set(side * VALVE_SPACING, VALVE_SEAT, 0);
       const disc = new THREE.Mesh(valveGeometry, solid(NEUTRAL));
       const stem = new THREE.Mesh(stemGeometry, solid(NEUTRAL));
       stem.position.y = 0.09;
@@ -191,12 +194,10 @@ export function buildEngineModel(): EngineModel {
   const placePiston = (rig: CylinderRig, crankAngle: number) => {
     const offset = pistonOffset(crankAngle, rig.spec);
     rig.piston.position.y = offset;
-    // The crankpin in this tilted group, then the rod from it to the piston pin.
-    const pinAngle = crankAngle + rig.spec.throwOffset - rig.spec.bankAngle;
-    const pinY = CRANK_RADIUS * Math.cos(pinAngle);
-    const pinZ = CRANK_RADIUS * Math.sin(pinAngle);
-    rig.rod.position.set(0, (pinY + offset) / 2, pinZ / 2);
-    rig.rod.rotation.x = Math.atan2(-pinZ, offset - pinY);
+    // The rod runs from the crankpin, seen in this tilted group, up to the piston pin.
+    const pin = crankPin(crankAngle, rig.spec);
+    rig.rod.position.set(0, (pin.along + offset) / 2, pin.across / 2);
+    rig.rod.rotation.x = Math.atan2(-pin.across, offset - pin.along);
   };
 
   const applyPose = (pose: EnginePose) => {
@@ -206,20 +207,20 @@ export function buildEngineModel(): EngineModel {
     const one = rigs[0];
     if (one) {
       const { cylinderOne } = pose;
-      one.intakeValve.position.y = HEAD - 0.01 - VALVE_LIFT * cylinderOne.intakeValve;
-      one.exhaustValve.position.y = HEAD - 0.01 - VALVE_LIFT * cylinderOne.exhaustValve;
+      one.intakeValve.position.y = VALVE_SEAT - VALVE_LIFT * cylinderOne.intakeValve;
+      one.exhaustValve.position.y = VALVE_SEAT - VALVE_LIFT * cylinderOne.exhaustValve;
 
       const crown = one.piston.position.y + PISTON_HEIGHT / 2;
       const height = Math.max(0.001, HEAD - crown);
       one.charge.scale.y = height;
       one.charge.position.y = crown + height / 2;
-      const showing = cylinderOne.charge !== 'none' && cylinderOne.fill > 0;
-      one.charge.visible = showing;
-      if (showing && cylinderOne.charge !== 'none') {
+      const kind = cylinderOne.charge;
+      one.charge.visible = kind !== 'none' && cylinderOne.fill > 0;
+      if (kind !== 'none') {
         const material = one.charge.material;
-        material.color.copy(CHARGE_COLORS[cylinderOne.charge]).lerp(WHITE, cylinderOne.pale * 0.7);
+        material.color.copy(CHARGE_COLORS[kind]).lerp(WHITE, cylinderOne.pale * 0.7);
         material.opacity = 0.35 + 0.45 * cylinderOne.fill;
-        material.emissiveIntensity = cylinderOne.charge === 'burning' ? 0.4 + 1.6 * cylinderOne.spark : 0;
+        material.emissiveIntensity = kind === 'burning' ? 0.4 + 1.6 * cylinderOne.spark : 0;
       }
     }
 

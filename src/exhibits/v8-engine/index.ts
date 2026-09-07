@@ -1,7 +1,8 @@
 import * as THREE from 'three';
 import type { Exhibit } from '../../shared/exhibitContract';
 import { buildEngineModel } from './buildEngineModel';
-import { poseAt, type NameTag } from './enginePose';
+import { createPartLabel } from './createPartLabel';
+import { poseAt } from './enginePose';
 import { STEPS, type V8Step } from './steps';
 
 const MAX_FRAME_SECONDS = 0.1;
@@ -9,6 +10,7 @@ const MAX_FRAME_SECONDS = 0.1;
 const CAMERA_GLIDE = 4;
 
 const easings = {
+  even: (t: number) => t,
   smooth: (t: number) => t * t * (3 - 2 * t),
   shove: (t: number) => 1 - (1 - t) ** 3,
 } as const;
@@ -51,7 +53,7 @@ const v8Engine: Exhibit = {
     renderer.domElement.style.display = 'block';
     viewport.appendChild(renderer.domElement);
 
-    const nameTag = createNameTag(viewport);
+    const partLabel = createPartLabel(viewport);
 
     const scene = new THREE.Scene();
     scene.add(new THREE.HemisphereLight(0xffffff, 0x9aa3ad, 1.4));
@@ -99,7 +101,7 @@ const v8Engine: Exhibit = {
       const progress = easings[step.easing](Math.min(1, elapsed / step.duration));
       const pose = poseAt(step.id, progress);
       model.applyPose(pose);
-      nameTag.show(pose.nameTag);
+      partLabel.show(pose.label);
 
       const glide = 1 - Math.exp(-CAMERA_GLIDE * dt);
       camera.position.lerp(new THREE.Vector3().fromArray(step.camera.position), glide);
@@ -125,45 +127,6 @@ function stepAt(stepIndex: number): V8Step {
   const step = STEPS[stepIndex];
   if (!step) throw new Error(`The V8 has no Step ${stepIndex + 1}`);
   return step;
-}
-
-/** The label that names a part while the model lights it up. */
-function createNameTag(viewport: HTMLElement) {
-  const tag = document.createElement('div');
-  Object.assign(tag.style, {
-    position: 'absolute',
-    top: '1.5rem',
-    left: '50%',
-    transform: 'translateX(-50%)',
-    maxWidth: '26rem',
-    padding: '0.6rem 1.1rem',
-    borderRadius: '0.75rem',
-    background: 'rgba(255, 255, 255, 0.92)',
-    boxShadow: '0 6px 24px rgba(0, 0, 0, 0.1)',
-    textAlign: 'center',
-    lineHeight: '1.4',
-    pointerEvents: 'none',
-  });
-  const name = document.createElement('strong');
-  Object.assign(name.style, { display: 'block', fontSize: '1.2rem' });
-  const meaning = document.createElement('span');
-  Object.assign(meaning.style, { display: 'block', fontSize: '0.95rem', color: '#4a4a4a' });
-  tag.append(name, meaning);
-  tag.hidden = true;
-  viewport.appendChild(tag);
-
-  let shown: NameTag | null = null;
-  return {
-    show(next: NameTag | null) {
-      if (next === shown || (next && shown && next.name === shown.name)) return;
-      shown = next;
-      tag.hidden = next === null;
-      if (next) {
-        name.textContent = next.name;
-        meaning.textContent = next.meaning;
-      }
-    },
-  };
 }
 
 export default v8Engine;
