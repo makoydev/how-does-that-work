@@ -45,10 +45,10 @@ if (isTouchDevice()) {
     if (openedExhibit) {
       openedExhibit.close();
       openedExhibit = null;
+      // No attempt to recapture the mouse: browsers refuse it after Escape
+      // and after back or forward, and a refused attempt would show a
+      // misleading "click again" hint. The start screen asks for the click.
       startScreen.show();
-      // Browsers may refuse to recapture the mouse without a fresh click; the
-      // start screen is already up for that case.
-      hall.controls.lock();
     }
     hall.start();
   };
@@ -57,8 +57,13 @@ if (isTouchDevice()) {
   // closing both go through it, so back and forward land on the same path.
   const showWhatTheAddressBarNames = () => {
     const exhibit = router.slug === null ? undefined : registry.resolve(router.slug);
-    if (exhibit) showExhibit(exhibit);
-    else showHall();
+    if (exhibit) {
+      showExhibit(exhibit);
+    } else {
+      // A stale link is harmless, but the address bar should not keep it.
+      router.replaceWithHall();
+      showHall();
+    }
   };
   router.onChange(showWhatTheAddressBarNames);
   hall.onOpenRequest((exhibit) => router.showExhibit(exhibit.manifest.slug));

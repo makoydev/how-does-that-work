@@ -7,6 +7,7 @@ import {
 import { createWalkthroughView } from '../walkthrough/walkthroughView';
 
 export interface OpenedExhibit {
+  /** The Exhibit this overlay is showing, so the App can tell a re-open from a switch. */
   readonly exhibit: Exhibit;
   /** Unmount the Exhibit and remove the overlay. Safe to call more than once. */
   close(): void;

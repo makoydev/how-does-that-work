@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { hashForSlug, slugFromHash } from './hashRoute';
+import { hashForSlug, slugFromHash } from './exhibitHash';
 
 describe('slugFromHash', () => {
   it('reads the slug out of an Exhibit hash', () => {
