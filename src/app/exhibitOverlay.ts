@@ -7,19 +7,22 @@ import {
 import { createWalkthroughView } from '../walkthrough/walkthroughView';
 
 export interface OpenedExhibit {
-  /** Unmount the Exhibit and remove the overlay. Calls the `onClose` given at open. */
+  readonly exhibit: Exhibit;
+  /** Unmount the Exhibit and remove the overlay. Safe to call more than once. */
   close(): void;
 }
 
 /**
  * The full-screen overlay that hosts one open Exhibit: a container the
  * Exhibit mounts into and owns, and the Walkthrough panel beneath it. The
- * caller pauses the Hall behind it and resumes it on close.
+ * caller pauses the Hall behind it and resumes it on close. The Close button
+ * and Escape do not close the overlay themselves; they call `requestClose`,
+ * so the caller can route the request through the address bar first.
  */
 export function openExhibit(
   container: HTMLElement,
   exhibit: Exhibit,
-  onClose: () => void,
+  requestClose: () => void,
 ): OpenedExhibit {
   const overlay = document.createElement('div');
   overlay.className = 'exhibit-overlay';
@@ -40,15 +43,14 @@ export function openExhibit(
     view.dispose();
     unmount();
     overlay.remove();
-    onClose();
   };
 
   // Attach first so an Exhibit that sizes a canvas from its container sees real dimensions.
   container.appendChild(overlay);
   const unmount = exhibit.mount(exhibitContainer, createExhibitHandle(controller));
-  const view = createWalkthroughView(overlay, exhibit, controller, close);
+  const view = createWalkthroughView(overlay, exhibit, controller, requestClose);
 
-  return { close };
+  return { exhibit, close };
 }
 
 /** Lets a mounted Exhibit follow the controller without being able to drive it. */
