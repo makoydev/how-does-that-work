@@ -110,3 +110,28 @@ kbd {
   text-align: center;
   line-height: 1.6;
 }
+
+.hall-prompt {
+  position: absolute;
+  left: 50%;
+  bottom: 12%;
+  transform: translateX(-50%);
+  padding: 0.6rem 1rem;
+  border-radius: 999px;
+  background: rgba(31, 31, 31, 0.82);
+  color: #fff;
+  font-size: 0.95rem;
+  white-space: nowrap;
+  pointer-events: none;
+  user-select: none;
+}
+
+.hall-prompt[hidden] {
+  display: none;
+}
+
+.hall-prompt kbd {
+  border-color: #777;
+  background: #333;
+  color: #fff;
+}
