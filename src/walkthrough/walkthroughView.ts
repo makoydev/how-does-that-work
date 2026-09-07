@@ -21,7 +21,6 @@ export function createWalkthroughView(
   onClose: () => void,
 ): WalkthroughView {
   const { steps, hasFreePlay } = exhibit.walkthrough;
-  const lastStep = steps.length - 1;
 
   const panel = document.createElement('section');
   panel.className = 'walkthrough';
@@ -89,9 +88,8 @@ export function createWalkthroughView(
   }
 
   const render = () => {
-    const { stepIndex, phase } = controller;
+    const { stepIndex, phase, isOnLastStep: onLastStep } = controller;
     const inFreePlay = phase === 'free play';
-    const onLastStep = stepIndex === lastStep;
 
     caption.textContent = inFreePlay ? FREE_PLAY_CAPTION : (steps[stepIndex]?.caption ?? '');
     previous.disabled = !controller.canGoPrevious;
@@ -113,11 +111,15 @@ export function createWalkthroughView(
   close.addEventListener('click', onClose);
 
   const onKeyDown = (event: KeyboardEvent) => {
+    // In Free Play the arrows belong to the Exhibit's own controls.
+    const paging = controller.phase === 'walkthrough';
     switch (event.key) {
       case 'ArrowLeft':
+        if (!paging) return;
         controller.previous();
         break;
       case 'ArrowRight':
+        if (!paging) return;
         controller.next();
         break;
       case 'Escape':

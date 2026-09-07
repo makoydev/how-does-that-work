@@ -145,18 +145,13 @@ kbd {
   outline: none;
 }
 
-.exhibit-overlay__stage {
+.exhibit-overlay__exhibit {
   position: relative;
   flex: 1;
   min-height: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-}
-
-.exhibit-overlay__stage canvas {
-  width: 100%;
-  height: 100%;
 }
 
 .walkthrough {

@@ -15,13 +15,15 @@ export interface WalkthroughController extends WalkthroughState {
   readonly canGoPrevious: boolean;
   /** False on the last Step of an Exhibit without Free Play. */
   readonly canGoNext: boolean;
+  /** True on the last Step in either phase, where Learn More and Free Play live. */
+  readonly isOnLastStep: boolean;
   next(): void;
   previous(): void;
   /** Go straight to a Step. Out-of-range indexes are ignored. */
   jumpTo(stepIndex: number): void;
-  /** Does nothing for an Exhibit without Free Play. */
+  /** Only from the last Step, and only for an Exhibit with Free Play. */
   enterFreePlay(): void;
-  /** Back to the last Step. */
+  /** Back to the last Step. Does nothing outside Free Play. */
   leaveFreePlay(): void;
   /** Hear about every change of Step or phase. Returns an unsubscribe. */
   onChange(listener: (state: WalkthroughState) => void): () => void;
@@ -42,7 +44,7 @@ export function createWalkthroughController(shape: WalkthroughShape): Walkthroug
   const canGoPrevious = () => inWalkthrough() && stepIndex > 0;
   const canGoNext = () => inWalkthrough() && (stepIndex < lastStep || shape.hasFreePlay);
 
-  const set = (nextStepIndex: number, nextPhase: WalkthroughPhase) => {
+  const transition = (nextStepIndex: number, nextPhase: WalkthroughPhase) => {
     if (nextStepIndex === stepIndex && nextPhase === phase) return;
     stepIndex = nextStepIndex;
     phase = nextPhase;
@@ -51,7 +53,9 @@ export function createWalkthroughController(shape: WalkthroughShape): Walkthroug
   };
 
   const enterFreePlay = () => {
-    if (shape.hasFreePlay) set(lastStep, 'free play');
+    if (shape.hasFreePlay && inWalkthrough() && stepIndex === lastStep) {
+      transition(lastStep, 'free play');
+    }
   };
 
   return {
@@ -67,19 +71,24 @@ export function createWalkthroughController(shape: WalkthroughShape): Walkthroug
     get canGoNext() {
       return canGoNext();
     },
+    get isOnLastStep() {
+      return stepIndex === lastStep;
+    },
     next: () => {
       if (!canGoNext()) return;
-      if (stepIndex < lastStep) set(stepIndex + 1, phase);
+      if (stepIndex < lastStep) transition(stepIndex + 1, phase);
       else enterFreePlay();
     },
     previous: () => {
-      if (canGoPrevious()) set(stepIndex - 1, phase);
+      if (canGoPrevious()) transition(stepIndex - 1, phase);
     },
     jumpTo: (target) => {
-      if (Number.isInteger(target) && target >= 0 && target <= lastStep) set(target, 'walkthrough');
+      if (Number.isInteger(target) && target >= 0 && target <= lastStep) transition(target, 'walkthrough');
     },
     enterFreePlay,
-    leaveFreePlay: () => set(lastStep, 'walkthrough'),
+    leaveFreePlay: () => {
+      if (!inWalkthrough()) transition(lastStep, 'walkthrough');
+    },
     onChange: (listener) => {
       listeners.add(listener);
       return () => listeners.delete(listener);

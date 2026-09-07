@@ -74,6 +74,37 @@ describe('createWalkthroughController at the last Step with Free Play', () => {
     expect(controller.phase).toBe('walkthrough');
     expect(controller.stepIndex).toBe(1);
   });
+
+  it('reports being on the last Step in both phases', () => {
+    const controller = createWalkthroughController({ stepCount: 2, hasFreePlay: true });
+    expect(controller.isOnLastStep).toBe(false);
+    controller.next();
+    expect(controller.isOnLastStep).toBe(true);
+    controller.enterFreePlay();
+    expect(controller.isOnLastStep).toBe(true);
+  });
+});
+
+describe('createWalkthroughController guarding Free Play', () => {
+  it('ignores entering Free Play before the last Step', () => {
+    const controller = createWalkthroughController({ stepCount: 3, hasFreePlay: true });
+    controller.enterFreePlay();
+    expect(controller.phase).toBe('walkthrough');
+    expect(controller.stepIndex).toBe(0);
+  });
+
+  it('ignores entering Free Play when the Exhibit has none', () => {
+    const controller = createWalkthroughController(v8);
+    controller.jumpTo(v8.stepCount - 1);
+    controller.enterFreePlay();
+    expect(controller.phase).toBe('walkthrough');
+  });
+
+  it('ignores leaving Free Play while still in the walkthrough phase', () => {
+    const controller = createWalkthroughController({ stepCount: 3, hasFreePlay: true });
+    controller.leaveFreePlay();
+    expect(controller.stepIndex).toBe(0);
+  });
 });
 
 describe('createWalkthroughController jumping to a Step', () => {
@@ -98,6 +129,7 @@ describe('createWalkthroughController jumping to a Step', () => {
 
   it('returns to the walkthrough phase when jumping from Free Play', () => {
     const controller = createWalkthroughController({ stepCount: 3, hasFreePlay: true });
+    controller.jumpTo(2);
     controller.enterFreePlay();
     controller.jumpTo(1);
     expect(controller.phase).toBe('walkthrough');
