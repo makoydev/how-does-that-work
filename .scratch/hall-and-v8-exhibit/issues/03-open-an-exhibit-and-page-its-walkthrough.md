@@ -6,15 +6,19 @@
 
 **Status:** ready-for-agent
 
-- [ ] Controller starts on the first Step; next and previous move by one
-- [ ] Previous on the first Step is a no-op and the button is disabled
-- [ ] Next on the last Step is a no-op when Free Play is absent
-- [ ] Next on the last Step enters Free Play when present; leaving Free Play returns to the last Step
-- [ ] Jump to an out-of-range Step is rejected; jump while in Free Play returns to the walkthrough phase
-- [ ] Controller tests cover every case above and use the V8 Step list as a fixture
-- [ ] Opening an Exhibit mounts it into a container it owns and pauses the Hall render loop and pointer lock
-- [ ] Caption, dots, Next, Previous, Free Play, Close, and Learn More render from controller state
-- [ ] Arrow keys page Steps; Escape closes
-- [ ] The Exhibit's mount handle is told each Step change and each Free Play enter or leave
-- [ ] Closing unmounts the Exhibit and restores the Hall camera pose and pointer lock flow
-- [ ] Nothing autoplays
+- [x] Controller starts on the first Step; next and previous move by one
+- [x] Previous on the first Step is a no-op and the button is disabled
+- [x] Next on the last Step is a no-op when Free Play is absent
+- [x] Next on the last Step enters Free Play when present; leaving Free Play returns to the last Step
+- [x] Jump to an out-of-range Step is rejected; jump while in Free Play returns to the walkthrough phase
+- [x] Controller tests cover every case above and use the V8 Step list as a fixture
+- [x] Opening an Exhibit mounts it into a container it owns and pauses the Hall render loop and pointer lock
+- [x] Caption, dots, Next, Previous, Free Play, Close, and Learn More render from controller state
+- [x] Arrow keys page Steps; Escape closes
+- [x] The Exhibit's mount handle is told each Step change and each Free Play enter or leave
+- [x] Closing unmounts the Exhibit and restores the Hall camera pose and pointer lock flow
+- [x] Nothing autoplays
+
+## Comments
+
+**2026-09-07, agent:** Implemented. Test seam is the pure Walkthrough controller (`src/walkthrough/walkthroughController.test.ts`, fifteen cases: starts on the first Step; next and previous move by one; previous on the first Step is a no-op and `canGoPrevious` is false; next on the last Step is a no-op without Free Play; next on the last Step enters Free Play when present; leaving Free Play returns to the last Step; jump past the end or below zero is rejected; jump from Free Play returns to the walkthrough phase; change listeners fire once per real change, stay quiet on no-ops, and stop after unsubscribing). The V8's real Step list is one fixture. The Walkthrough view (`src/walkthrough/walkthroughView.ts`) renders caption, dots, Previous, Next, Free Play, Back to the Walkthrough, Close, and Learn More from controller state and wires the arrow keys and Escape. The overlay (`src/app/exhibitOverlay.ts`) owns the stage the Exhibit mounts into and adapts the controller into the Exhibit's mount handle, which is told each Step change and each Free Play enter or leave. The Hall gained `onOpenRequest` (click or E on a highlighted pedestal while the mouse is captured); `main.ts` stops the Hall loop and releases pointer lock on open, and on close restarts the loop, shows the start screen, and tries to recapture the mouse. Nothing moves the camera while the Hall is stopped, so the pose is the one the Visitor left. The stub V8 has three placeholder Steps and a mount that prints the current Step id. The overlay, paging by arrow and dot, Learn More on the last Step, the Free Play buttons, Escape, and the handle notifications were checked in Chrome by opening the overlay through the dev server's module graph, since the harness's hidden window refuses pointer lock. Still open for a human: one manual pass of walking up to the pedestal, pressing E, and closing to land back at the same pose.

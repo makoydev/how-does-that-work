@@ -135,3 +135,149 @@ kbd {
   background: #333;
   color: #fff;
 }
+
+.exhibit-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  background: rgba(250, 250, 248, 0.96);
+  outline: none;
+}
+
+.exhibit-overlay__stage {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.exhibit-overlay__stage canvas {
+  width: 100%;
+  height: 100%;
+}
+
+.walkthrough {
+  flex: none;
+  max-width: 44rem;
+  width: calc(100% - 3rem);
+  margin: 0 auto 1.5rem;
+  padding: 1.25rem 1.75rem 1.5rem;
+  border-radius: 1rem;
+  background: #fff;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
+}
+
+.walkthrough__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.walkthrough__title {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.walkthrough button {
+  padding: 0.5rem 0.9rem;
+  border: 1px solid #d6d4cf;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  cursor: pointer;
+}
+
+.walkthrough button:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.walkthrough button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.walkthrough__caption {
+  min-height: 3.2em;
+  margin: 1rem 0;
+  font-size: 1.25rem;
+  line-height: 1.6;
+}
+
+.walkthrough__nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.walkthrough__dots {
+  display: flex;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.walkthrough button.walkthrough__dot {
+  width: 0.85rem;
+  height: 0.85rem;
+  padding: 0;
+  border: 1px solid #b9b5ad;
+  border-radius: 50%;
+  background: #fff;
+}
+
+.walkthrough button.walkthrough__dot.is-current {
+  border-color: var(--accent);
+  background: var(--accent);
+}
+
+.walkthrough__extras {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.walkthrough__extras:empty {
+  display: none;
+}
+
+.walkthrough button.walkthrough__free-play {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #fff;
+}
+
+.walkthrough__learn-more {
+  flex: 1 1 100%;
+  padding-top: 0.75rem;
+  border-top: 1px solid #ecebe7;
+  font-size: 0.95rem;
+}
+
+.walkthrough__learn-more h3 {
+  margin: 0 0 0.25rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #6b6b6b;
+}
+
+.walkthrough__learn-more ul {
+  margin: 0;
+  padding-left: 1.2rem;
+}
+
+.walkthrough__learn-more a {
+  color: var(--accent);
+}

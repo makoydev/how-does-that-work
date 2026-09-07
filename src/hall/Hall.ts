@@ -11,6 +11,11 @@ export interface Hall {
   readonly controls: FirstPersonControls;
   /** The Exhibit whose pedestal the Visitor is looking at from within reach. */
   readonly focusedExhibit: Exhibit | null;
+  /**
+   * Subscribe to the Visitor clicking or pressing E on a highlighted pedestal
+   * while the mouse is captured. Returns an unsubscribe.
+   */
+  onOpenRequest(listener: (exhibit: Exhibit) => void): () => void;
   /** Start rendering frames. Safe to call more than once. */
   start(): void;
   /** Stop rendering frames, leaving the last frame on screen. */
@@ -71,6 +76,18 @@ export function createHall(container: HTMLElement, registry: ExhibitRegistry): H
 
   const focus = createPedestalFocus(container, camera, pedestals, REACH);
 
+  const openListeners = new Set<(exhibit: Exhibit) => void>();
+  const requestOpen = () => {
+    const exhibit = focus.focused?.exhibit;
+    if (!exhibit || !controls.isLocked) return;
+    for (const listener of openListeners) listener(exhibit);
+  };
+  const onOpenKey = (event: KeyboardEvent) => {
+    if (event.code === 'KeyE' && !event.repeat) requestOpen();
+  };
+  renderer.domElement.addEventListener('click', requestOpen);
+  document.addEventListener('keydown', onOpenKey);
+
   const onResize = () => {
     const { clientWidth, clientHeight } = container;
     camera.aspect = clientWidth / clientHeight;
@@ -96,6 +113,10 @@ export function createHall(container: HTMLElement, registry: ExhibitRegistry): H
     get focusedExhibit() {
       return focus.focused?.exhibit ?? null;
     },
+    onOpenRequest: (listener) => {
+      openListeners.add(listener);
+      return () => openListeners.delete(listener);
+    },
     start: () => {
       if (frame !== null) return;
       timer.reset();
@@ -110,6 +131,9 @@ export function createHall(container: HTMLElement, registry: ExhibitRegistry): H
       cancelAnimationFrame(frame ?? 0);
       frame = null;
       window.removeEventListener('resize', onResize);
+      renderer.domElement.removeEventListener('click', requestOpen);
+      document.removeEventListener('keydown', onOpenKey);
+      openListeners.clear();
       controls.dispose();
       renderer.dispose();
       renderer.domElement.remove();
