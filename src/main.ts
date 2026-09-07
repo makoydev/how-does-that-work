@@ -14,5 +14,6 @@ if (isTouchDevice()) {
   const hall = createHall(app, HALL_SIZE);
   const startScreen = createStartScreen(app, () => hall.controls.lock());
   hall.controls.onLockChange((locked) => (locked ? startScreen.hide() : startScreen.show()));
+  hall.controls.onLockRefused(() => startScreen.askToClickAgain());
   hall.start();
 }

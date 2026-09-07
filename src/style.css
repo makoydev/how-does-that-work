@@ -96,6 +96,11 @@ kbd {
   font-weight: 600;
 }
 
+.start-screen__retry {
+  color: #8a5a00;
+  font-size: 0.95rem;
+}
+
 .touch-message {
   display: flex;
   align-items: center;

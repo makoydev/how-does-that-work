@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { buildLighting, buildRoom, walkableBounds, type RoomSize } from './buildRoom';
+import { buildLighting, buildWalls, walkableBounds, type HallSize } from './buildWalls';
 import { createFirstPersonControls, type FirstPersonControls } from './firstPersonControls';
 
 export interface Hall {
@@ -17,10 +17,10 @@ const BODY_RADIUS = 0.4;
 const MAX_FRAME_SECONDS = 0.1;
 
 /**
- * The walkable room. For now it is empty: pedestals arrive with the Exhibit
+ * The walkable Hall. For now it is empty: pedestals arrive with the Exhibit
  * registry. The Hall owns its canvas, camera, and render loop.
  */
-export function createHall(container: HTMLElement, size: RoomSize): Hall {
+export function createHall(container: HTMLElement, size: HallSize): Hall {
   const renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   renderer.setSize(container.clientWidth, container.clientHeight);
@@ -29,7 +29,7 @@ export function createHall(container: HTMLElement, size: RoomSize): Hall {
 
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0xfbfbf9);
-  scene.add(buildRoom(size));
+  scene.add(buildWalls(size));
   scene.add(buildLighting(size));
 
   const camera = new THREE.PerspectiveCamera(

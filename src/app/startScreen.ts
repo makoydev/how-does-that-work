@@ -1,6 +1,8 @@
 export interface StartScreen {
   show(): void;
   hide(): void;
+  /** Tell the Visitor the click did not take and to try again. */
+  askToClickAgain(): void;
 }
 
 /**
@@ -20,17 +22,24 @@ export function createStartScreen(container: HTMLElement, onStart: () => void): 
         <dt><kbd>Esc</kbd></dt><dd>Release the mouse and come back here</dd>
       </dl>
       <p class="start-screen__cta">Click anywhere to enter the Hall</p>
+      <p class="start-screen__retry" hidden>The mouse was not captured yet. Please click again.</p>
     </div>
   `;
   screen.addEventListener('click', onStart);
   container.appendChild(screen);
+  const retry = screen.querySelector<HTMLElement>('.start-screen__retry');
+  if (!retry) throw new Error('Start screen is missing its retry hint');
 
   return {
     show: () => {
+      retry.hidden = true;
       screen.hidden = false;
     },
     hide: () => {
       screen.hidden = true;
+    },
+    askToClickAgain: () => {
+      retry.hidden = false;
     },
   };
 }

@@ -1,4 +1,4 @@
-export interface RoomBounds {
+export interface HallBounds {
   minX: number;
   maxX: number;
   minZ: number;
@@ -29,7 +29,7 @@ export function moveVisitor(
   yaw: number,
   input: WalkInput,
   dt: number,
-  room: RoomBounds,
+  hall: HallBounds,
   speed: number,
 ): FloorPosition {
   const forwardX = -Math.sin(yaw);
@@ -46,8 +46,8 @@ export function moveVisitor(
   const x = position.x + (forwardX * ahead + rightX * sideways) * step;
   const z = position.z + (forwardZ * ahead + rightZ * sideways) * step;
   return {
-    x: clamp(x, room.minX, room.maxX),
-    z: clamp(z, room.minZ, room.maxZ),
+    x: clamp(x, hall.minX, hall.maxX),
+    z: clamp(z, hall.minZ, hall.maxZ),
   };
 }
 

@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { moveVisitor, type RoomBounds, type WalkInput } from './moveVisitor';
+import { moveVisitor, type HallBounds, type WalkInput } from './moveVisitor';
 
 export interface FirstPersonControls {
   /** Ask the browser to capture the mouse. Must be called from a user gesture. */
@@ -10,6 +10,11 @@ export interface FirstPersonControls {
   update(dt: number): void;
   /** Subscribe to the mouse being captured or released. Returns an unsubscribe. */
   onLockChange(listener: (locked: boolean) => void): () => void;
+  /**
+   * Subscribe to a refused lock request. Browsers refuse for about a second
+   * after Escape releases the mouse, so the Visitor needs to click again.
+   */
+  onLockRefused(listener: () => void): () => void;
   dispose(): void;
 }
 
@@ -24,12 +29,13 @@ const MAX_PITCH = Math.PI / 2 - 0.05;
 export function createFirstPersonControls(
   camera: THREE.PerspectiveCamera,
   element: HTMLElement,
-  bounds: RoomBounds,
+  bounds: HallBounds,
   walkSpeed: number,
 ): FirstPersonControls {
   const euler = new THREE.Euler(0, 0, 0, 'YXZ');
   const keys: WalkInput = { forward: false, back: false, left: false, right: false };
   const lockListeners = new Set<(locked: boolean) => void>();
+  const refusedListeners = new Set<() => void>();
 
   const isLocked = () => document.pointerLockElement === element;
 
@@ -45,19 +51,15 @@ export function createFirstPersonControls(
   const setKey = (code: string, down: boolean) => {
     switch (code) {
       case 'KeyW':
-      case 'ArrowUp':
         keys.forward = down;
         break;
       case 'KeyS':
-      case 'ArrowDown':
         keys.back = down;
         break;
       case 'KeyA':
-      case 'ArrowLeft':
         keys.left = down;
         break;
       case 'KeyD':
-      case 'ArrowRight':
         keys.right = down;
         break;
     }
@@ -81,14 +83,17 @@ export function createFirstPersonControls(
   document.addEventListener('mousemove', onMouseMove);
   document.addEventListener('keydown', onKeyDown);
   document.addEventListener('keyup', onKeyUp);
+  // Chrome reports a refusal by rejecting the promise; Firefox fires this event.
+  const onPointerLockError = () => {
+    for (const listener of refusedListeners) listener();
+  };
+
   document.addEventListener('pointerlockchange', onPointerLockChange);
+  document.addEventListener('pointerlockerror', onPointerLockError);
 
   return {
     lock: () => {
-      // The browser refuses lock when the tab is hidden or the click was not
-      // a real gesture. The start screen stays up, so the Visitor just clicks
-      // again; there is nothing else to do with the rejection.
-      Promise.resolve(element.requestPointerLock()).catch(() => undefined);
+      Promise.resolve(element.requestPointerLock()).catch(onPointerLockError);
     },
     get isLocked() {
       return isLocked();
@@ -111,12 +116,18 @@ export function createFirstPersonControls(
       lockListeners.add(listener);
       return () => lockListeners.delete(listener);
     },
+    onLockRefused: (listener) => {
+      refusedListeners.add(listener);
+      return () => refusedListeners.delete(listener);
+    },
     dispose: () => {
       document.removeEventListener('mousemove', onMouseMove);
       document.removeEventListener('keydown', onKeyDown);
       document.removeEventListener('keyup', onKeyUp);
       document.removeEventListener('pointerlockchange', onPointerLockChange);
+      document.removeEventListener('pointerlockerror', onPointerLockError);
       lockListeners.clear();
+      refusedListeners.clear();
     },
   };
 }

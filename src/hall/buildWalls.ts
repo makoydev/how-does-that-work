@@ -1,7 +1,7 @@
 import * as THREE from 'three';
-import type { RoomBounds } from './moveVisitor';
+import type { HallBounds } from './moveVisitor';
 
-export interface RoomSize {
+export interface HallSize {
   width: number;
   depth: number;
   height: number;
@@ -14,11 +14,11 @@ const SKIRTING = 0xcfcbc2;
 const SKIRTING_HEIGHT = 0.12;
 
 /**
- * A bright, flat-coloured museum room centred on the origin. Walls are
- * single-sided so the Visitor never sees them from outside the room.
+ * The Hall's floor, walls, and ceiling: bright, flat-coloured, centred on the
+ * origin. Walls are single-sided so the Visitor never sees them from outside.
  */
-export function buildRoom(size: RoomSize): THREE.Group {
-  const room = new THREE.Group();
+export function buildWalls(size: HallSize): THREE.Group {
+  const walls = new THREE.Group();
   const { width, depth, height } = size;
 
   const floor = new THREE.Mesh(
@@ -26,7 +26,7 @@ export function buildRoom(size: RoomSize): THREE.Group {
     new THREE.MeshStandardMaterial({ color: FLOOR, roughness: 0.95 }),
   );
   floor.rotation.x = -Math.PI / 2;
-  room.add(floor);
+  walls.add(floor);
 
   const ceiling = new THREE.Mesh(
     new THREE.PlaneGeometry(width, depth),
@@ -34,36 +34,36 @@ export function buildRoom(size: RoomSize): THREE.Group {
   );
   ceiling.rotation.x = Math.PI / 2;
   ceiling.position.y = height;
-  room.add(ceiling);
+  walls.add(ceiling);
 
   const wallMaterial = new THREE.MeshStandardMaterial({ color: WALL, roughness: 0.9 });
   const skirtingMaterial = new THREE.MeshStandardMaterial({ color: SKIRTING, roughness: 0.9 });
 
-  const walls: { length: number; x: number; z: number; rotationY: number }[] = [
+  const sides: { length: number; x: number; z: number; rotationY: number }[] = [
     { length: width, x: 0, z: -depth / 2, rotationY: 0 },
     { length: width, x: 0, z: depth / 2, rotationY: Math.PI },
     { length: depth, x: -width / 2, z: 0, rotationY: Math.PI / 2 },
     { length: depth, x: width / 2, z: 0, rotationY: -Math.PI / 2 },
   ];
 
-  for (const { length, x, z, rotationY } of walls) {
+  for (const { length, x, z, rotationY } of sides) {
     const wall = new THREE.Mesh(new THREE.PlaneGeometry(length, height), wallMaterial);
     wall.position.set(x, height / 2, z);
     wall.rotation.y = rotationY;
-    room.add(wall);
+    walls.add(wall);
 
     const skirting = new THREE.Mesh(new THREE.PlaneGeometry(length, SKIRTING_HEIGHT), skirtingMaterial);
     skirting.position.set(x, SKIRTING_HEIGHT / 2, z);
     skirting.rotation.y = rotationY;
     // Sit a hair in front of the wall so the two planes never z-fight.
     skirting.translateZ(0.005);
-    room.add(skirting);
+    walls.add(skirting);
   }
 
-  return room;
+  return walls;
 }
 
-export function buildLighting(size: RoomSize): THREE.Group {
+export function buildLighting(size: HallSize): THREE.Group {
   const lights = new THREE.Group();
 
   // Bright and even, like a gallery with skylights: the ambient and
@@ -83,8 +83,8 @@ export function buildLighting(size: RoomSize): THREE.Group {
   return lights;
 }
 
-/** Where the camera may stand: the room inset by a little body radius. */
-export function walkableBounds(size: RoomSize, bodyRadius: number): RoomBounds {
+/** Where the camera may stand: the Hall inset by a little body radius. */
+export function walkableBounds(size: HallSize, bodyRadius: number): HallBounds {
   return {
     minX: -size.width / 2 + bodyRadius,
     maxX: size.width / 2 - bodyRadius,

@@ -18,3 +18,5 @@
 ## Comments
 
 **2026-09-07, agent:** Implemented. Test seam is `moveVisitor` (camera-relative WASD walking and wall clamping) in `src/hall/moveVisitor.test.ts`. Pointer lock, Escape, and mouse look were checked by reading the code and rendering in Chrome; the automation harness runs in a hidden window where browsers refuse pointer lock, so the lock-and-walk flow still wants one manual pass.
+
+**2026-09-07, agent, after /code-review:** Renamed the "room" vocabulary the glossary avoids (now `buildWalls`, `HallSize`, `HallBounds`), removed unrequested arrow-key walking, and added a "please click again" hint on the start screen for the browser's post-Escape pointer-lock cooldown. The hint path was verified in Chrome, where the harness's hidden window refuses lock. Still open for a human: one manual pass of click-to-lock, walk, and Escape.
