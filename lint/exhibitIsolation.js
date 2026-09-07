@@ -10,8 +10,8 @@ const SHARED_ALLOWLIST = ['src/shared/palette', 'src/shared/exhibitContract'];
 /**
  * ESLint plugin with one rule: code under `src/exhibits/<slug>/` may import
  * only Three.js, the shared palette, the Exhibit contract types, and files
- * inside its own folder. Everything else, including the Hall, the App, and
- * other Exhibits, is an error.
+ * inside its own folder (plus vitest, in test files only). Everything else,
+ * including the Hall, the App, and other Exhibits, is an error.
  */
 export const exhibitIsolation = {
   meta: { name: 'exhibit-isolation' },
@@ -35,8 +35,12 @@ export const exhibitIsolation = {
         const exhibitDir = path.join(exhibitsDir, slug);
         const sharedAllowlist = SHARED_ALLOWLIST.map((file) => path.join(context.cwd, file));
 
+        const isTestFile = /\.test\.[jt]s$/.test(context.filename);
+
         const isAllowed = (source) => {
           if (source === 'three' || source.startsWith('three/')) return true;
+          // An Exhibit's own tests need the test runner and nothing else extra.
+          if (source === 'vitest' && isTestFile) return true;
           if (!source.startsWith('.')) return false;
           const resolved = path.resolve(path.dirname(context.filename), source);
           if (resolved.startsWith(exhibitDir + path.sep)) return true;

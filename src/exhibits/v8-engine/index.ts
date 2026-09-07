@@ -1,10 +1,23 @@
+import * as THREE from 'three';
 import type { Exhibit } from '../../shared/exhibitContract';
+import { buildEngineModel } from './buildEngineModel';
+import { poseAt, type NameTag } from './enginePose';
+import { STEPS, type V8Step } from './steps';
+
+const MAX_FRAME_SECONDS = 0.1;
+/** How quickly the camera glides to a Step's pose: larger settles sooner. */
+const CAMERA_GLIDE = 4;
+
+const easings = {
+  smooth: (t: number) => t * t * (3 - 2 * t),
+  shove: (t: number) => 1 - (1 - t) ** 3,
+} as const;
 
 /**
- * The V8 engine. For now a stub that proves the open-and-page path: a full
- * manifest, placeholder Steps, and a mount that shows which Step the
- * Visitor is on. The model, the real captions, Free Play, and the mini model
- * arrive in later tickets.
+ * The V8 engine: a schematic engine from primitives, and a Walkthrough that
+ * meets the parts then follows cylinder one through its four strokes. Every
+ * frame is drawn from the current Step and how far into it we are, so paging
+ * in any order always lands on a sane pose.
  */
 const v8Engine: Exhibit = {
   manifest: {
@@ -14,31 +27,143 @@ const v8Engine: Exhibit = {
     summary: 'Eight pistons take turns pushing on one crankshaft to make it spin.',
     sources: [
       { label: 'Four-stroke engine (Wikipedia)', url: 'https://en.wikipedia.org/wiki/Four-stroke_engine' },
+      { label: 'Animated four-stroke engine (Animated Engines)', url: 'https://animatedengines.com/otto.html' },
       { label: 'V8 engine (Wikipedia)', url: 'https://en.wikipedia.org/wiki/V8_engine' },
+      {
+        label: 'Internal Combustion Engines, MIT OpenCourseWare 2.61',
+        url: 'https://ocw.mit.edu/courses/2-61-internal-combustion-engines-spring-2017/',
+      },
     ],
   },
   walkthrough: {
-    steps: [
-      { id: 'parts', caption: 'Meet the parts. The model arrives in a later ticket.' },
-      { id: 'intake', caption: 'Intake. The model arrives in a later ticket.' },
-      { id: 'crankshaft', caption: 'Crankshaft. The model arrives in a later ticket.' },
-    ],
+    steps: STEPS,
     hasFreePlay: false,
   },
   mount(container, handle) {
-    const note = document.createElement('p');
-    const showStep = (stepIndex: number) => {
-      const step = v8Engine.walkthrough.steps[stepIndex];
-      note.textContent = `${v8Engine.manifest.summary} (Step ${stepIndex + 1}: ${step?.id})`;
+    const viewport = document.createElement('div');
+    Object.assign(viewport.style, { position: 'absolute', inset: '0' });
+    container.appendChild(viewport);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(viewport.clientWidth, viewport.clientHeight);
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.domElement.style.display = 'block';
+    viewport.appendChild(renderer.domElement);
+
+    const nameTag = createNameTag(viewport);
+
+    const scene = new THREE.Scene();
+    scene.add(new THREE.HemisphereLight(0xffffff, 0x9aa3ad, 1.4));
+    const sun = new THREE.DirectionalLight(0xffffff, 1.8);
+    sun.position.set(3, 6, 4);
+    scene.add(sun);
+    const model = buildEngineModel();
+    scene.add(model.object);
+
+    const camera = new THREE.PerspectiveCamera(42, viewport.clientWidth / viewport.clientHeight, 0.1, 50);
+    const lookingAt = new THREE.Vector3();
+
+    let step: V8Step = stepAt(handle.stepIndex);
+    let elapsed = 0;
+    const play = (stepIndex: number) => {
+      step = stepAt(stepIndex);
+      elapsed = 0;
     };
-    showStep(handle.stepIndex);
-    const unsubscribe = handle.onStepChange(showStep);
-    container.appendChild(note);
+    // The first frame starts on the Step's camera rather than gliding in from nowhere.
+    camera.position.fromArray(step.camera.position);
+    lookingAt.fromArray(step.camera.target);
+
+    // The viewport changes size when the Walkthrough panel grows or shrinks
+    // beneath it, not only on window resize. Resizing clears the canvas, so
+    // draw again straight away rather than leave a blank until the next frame.
+    const fit = () => {
+      const { clientWidth, clientHeight } = viewport;
+      if (!clientWidth || !clientHeight) return;
+      camera.aspect = clientWidth / clientHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(clientWidth, clientHeight);
+      renderer.render(scene, camera);
+    };
+    const resizeObserver = new ResizeObserver(fit);
+    resizeObserver.observe(viewport);
+
+    const timer = new THREE.Timer();
+    let frame = 0;
+    const tick = () => {
+      frame = requestAnimationFrame(tick);
+      timer.update();
+      const dt = Math.min(timer.getDelta(), MAX_FRAME_SECONDS);
+      elapsed += dt;
+
+      const progress = easings[step.easing](Math.min(1, elapsed / step.duration));
+      const pose = poseAt(step.id, progress);
+      model.applyPose(pose);
+      nameTag.show(pose.nameTag);
+
+      const glide = 1 - Math.exp(-CAMERA_GLIDE * dt);
+      camera.position.lerp(new THREE.Vector3().fromArray(step.camera.position), glide);
+      lookingAt.lerp(new THREE.Vector3().fromArray(step.camera.target), glide);
+      camera.lookAt(lookingAt);
+      renderer.render(scene, camera);
+    };
+    tick();
+
+    const unsubscribe = handle.onStepChange(play);
     return () => {
       unsubscribe();
-      note.remove();
+      cancelAnimationFrame(frame);
+      resizeObserver.disconnect();
+      model.dispose();
+      renderer.dispose();
+      viewport.remove();
     };
   },
 };
+
+function stepAt(stepIndex: number): V8Step {
+  const step = STEPS[stepIndex];
+  if (!step) throw new Error(`The V8 has no Step ${stepIndex + 1}`);
+  return step;
+}
+
+/** The label that names a part while the model lights it up. */
+function createNameTag(viewport: HTMLElement) {
+  const tag = document.createElement('div');
+  Object.assign(tag.style, {
+    position: 'absolute',
+    top: '1.5rem',
+    left: '50%',
+    transform: 'translateX(-50%)',
+    maxWidth: '26rem',
+    padding: '0.6rem 1.1rem',
+    borderRadius: '0.75rem',
+    background: 'rgba(255, 255, 255, 0.92)',
+    boxShadow: '0 6px 24px rgba(0, 0, 0, 0.1)',
+    textAlign: 'center',
+    lineHeight: '1.4',
+    pointerEvents: 'none',
+  });
+  const name = document.createElement('strong');
+  Object.assign(name.style, { display: 'block', fontSize: '1.2rem' });
+  const meaning = document.createElement('span');
+  Object.assign(meaning.style, { display: 'block', fontSize: '0.95rem', color: '#4a4a4a' });
+  tag.append(name, meaning);
+  tag.hidden = true;
+  viewport.appendChild(tag);
+
+  let shown: NameTag | null = null;
+  return {
+    show(next: NameTag | null) {
+      if (next === shown || (next && shown && next.name === shown.name)) return;
+      shown = next;
+      tag.hidden = next === null;
+      if (next) {
+        name.textContent = next.name;
+        meaning.textContent = next.meaning;
+      }
+    },
+  };
+}
 
 export default v8Engine;

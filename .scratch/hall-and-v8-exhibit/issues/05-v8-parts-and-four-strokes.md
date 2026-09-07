@@ -6,11 +6,15 @@
 
 **Status:** ready-for-agent
 
-- [ ] The engine is recognisable as a V8 with eight cylinders in a V, pistons, rods, crankshaft, and valves
-- [ ] Each of Steps one to five animates exactly one change over a short fixed duration
-- [ ] Each Step has its own camera pose
-- [ ] Captions are at most two plain sentences and define any technical word on first use
-- [ ] Colors follow the shared palette: blue mixture, orange combustion, grey exhaust, yellow for the part moving now
-- [ ] The manifest lists at least one general and one deeper source on four-stroke engines
-- [ ] The Exhibit imports nothing from the Hall, the App, or other Exhibits
-- [ ] Paging back and forth between Steps never leaves the model in a broken pose
+- [x] The engine is recognisable as a V8 with eight cylinders in a V, pistons, rods, crankshaft, and valves
+- [x] Each of Steps one to five animates exactly one change over a short fixed duration
+- [x] Each Step has its own camera pose
+- [x] Captions are at most two plain sentences and define any technical word on first use
+- [x] Colors follow the shared palette: blue mixture, orange combustion, grey exhaust, yellow for the part moving now
+- [x] The manifest lists at least one general and one deeper source on four-stroke engines
+- [x] The Exhibit imports nothing from the Hall, the App, or other Exhibits
+- [x] Paging back and forth between Steps never leaves the model in a broken pose
+
+## Comments
+
+**2026-09-07, agent:** Implemented. Test seam is the pure engine pose module (`src/exhibits/v8-engine/enginePose.ts`, twenty-nine cases in `enginePose.test.ts`): piston travel is 0 at top dead centre, 1 at bottom dead centre, and between the two a quarter turn on; intake starts at the top with the valve shut and nothing in the cylinder, opens the intake valve and fills blue as the piston drops, ends at the bottom full, and lights the piston and intake valve; compression shuts both valves, raises the piston, and turns the mixture pale; power flashes a spark at the start, turns the charge to burning gas, and has the piston at the bottom with the spark gone by the end; exhaust opens the exhaust valve and lets grey gas out as the piston rises to the top with the cylinder empty; each stroke ends exactly where the next begins and the four together turn the crank twice; the parts Step names Block, Cylinders, Pistons, Connecting rods, Crankshaft, and Valves in turn with a plain meaning each while the engine sits still and empty; progress past 1 or below 0 holds the end or start pose; an unknown Step id is refused by name. The Step list (`steps.ts`, thirteen cases in `steps.test.ts`) is checked for order, at most two sentences per caption, a short fixed duration, a pose the engine can strike, a distinct camera pose per Step, and the power caption saying it is the only stroke that makes power. The model (`buildEngineModel.ts`) is a translucent boxed V and crankcase, eight see-through tubes, disc pistons, box rods, a crankshaft of a main shaft with web, pin, and web at each of four cross-plane throws, and disc valves on stems; the mount (`index.ts`) owns its canvas, draws every frame from the current Step and how far into it we are, glides the camera to the Step's pose, and shows a name tag over the model while parts are named. Paging in any order is safe because nothing carries over between frames but the Step and elapsed time. The lint rule now lets `*.test.ts` files inside an Exhibit import vitest and nothing else extra. Sources are four: two general (Wikipedia four-stroke, Animated Engines four-stroke) and two deeper (Wikipedia V8, MIT OpenCourseWare 2.61 Internal Combustion Engines), all checked to resolve. Checked in Chrome against the dev server: because the harness window is hidden, the browser freezes animation frames, so the page clock was driven by hand; each Step's start, middle, and end poses render as intended, the name tag walks through the six parts, the mixture goes pale, the spark flashes orange, grey gas leaves, and jumping exhaust, compression, power, intake in quick succession lands on a clean intake pose. Two fixes came out of that pass: the canvas is sized from a ResizeObserver on its own viewport, since the Walkthrough panel appears after mount and changes height per Step, and the model is drawn again immediately after a resize so the canvas never shows blank. Still open for a human: one pass in a visible window to judge the pacing of the fixed durations (7.2 s for the parts, 2.4 s per stroke) and the camera glide, which the harness cannot show in real time.
